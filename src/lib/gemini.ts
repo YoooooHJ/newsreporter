@@ -13,6 +13,11 @@ type RawArticle = {
   url?: string;
 };
 
+type ValidArticle = {
+  title: string;
+  url: string;
+};
+
 function extractFromGrounding(
   groundingMetadata: Record<string, unknown> | undefined
 ): RawArticle[] {
@@ -44,9 +49,9 @@ function parseArticlesFromText(text: string): RawArticle[] {
   }
 }
 
-function dedupeArticles(articles: RawArticle[]): RawArticle[] {
+function dedupeArticles(articles: RawArticle[]): ValidArticle[] {
   const seen = new Set<string>();
-  const result: RawArticle[] = [];
+  const result: ValidArticle[] = [];
 
   for (const article of articles) {
     const title = article.title?.trim();
@@ -97,8 +102,8 @@ export async function searchNews(keyword: string): Promise<NewsItem[]> {
   const imageMap = await fetchOgImages(urls);
 
   return rawArticles.map((article) => ({
-    title: article.title!,
-    url: article.url!,
-    imageUrl: imageMap.get(article.url!) ?? null,
+    title: article.title,
+    url: article.url,
+    imageUrl: imageMap.get(article.url) ?? null,
   }));
 }
