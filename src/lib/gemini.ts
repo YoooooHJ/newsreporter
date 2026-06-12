@@ -2,6 +2,7 @@ import { GoogleGenAI, type GroundingMetadata } from "@google/genai";
 import { getGeminiApiKey } from "./env";
 import { fetchOgImages } from "./og-image";
 import { buildNewsSearchPrompt } from "./report-prompt";
+import { filterValidArticles } from "./url-validator";
 
 export type NewsItem = {
   title: string;
@@ -47,13 +48,24 @@ function titleFromUrl(url: string): string {
   }
 }
 
+function isDirectNewsUrl(url: string): boolean {
+  try {
+    const { hostname, pathname } = new URL(url);
+    if (hostname.includes("google.")) return false;
+    if (hostname.includes("vertexaisearch.cloud.google.com")) return false;
+    return pathname.length > 1;
+  } catch {
+    return false;
+  }
+}
+
 function extractFromGrounding(metadata: GroundingMetadata | undefined): RawArticle[] {
   if (!metadata?.groundingChunks) return [];
 
   const articles: RawArticle[] = [];
 
   for (const chunk of metadata.groundingChunks) {
-    if (chunk.web?.uri) {
+    if (chunk.web?.uri && isDirectNewsUrl(chunk.web.uri)) {
       articles.push({
         title: chunk.web.title?.trim() || titleFromUrl(chunk.web.uri),
         url: chunk.web.uri,
@@ -61,7 +73,10 @@ function extractFromGrounding(metadata: GroundingMetadata | undefined): RawArtic
       continue;
     }
 
-    if (chunk.retrievedContext?.uri) {
+    if (
+      chunk.retrievedContext?.uri &&
+      isDirectNewsUrl(chunk.retrievedContext.uri)
+    ) {
       articles.push({
         title:
           chunk.retrievedContext.title?.trim() ||
@@ -106,6 +121,7 @@ function dedupeArticles(articles: RawArticle[]): ValidArticle[] {
     }
 
     if (!normalizedUrl.startsWith("http")) continue;
+    if (!isDirectNewsUrl(normalizedUrl)) continue;
     if (seen.has(normalizedUrl)) continue;
     seen.add(normalizedUrl);
 
@@ -118,7 +134,6 @@ function dedupeArticles(articles: RawArticle[]): ValidArticle[] {
 
 export async function searchNews(keyword: string): Promise<NewsItem[]> {
   const apiKey = getGeminiApiKey();
-
   const ai = new GoogleGenAI({ apiKey });
 
   let response;
@@ -144,15 +159,15 @@ export async function searchNews(keyword: string): Promise<NewsItem[]> {
   }
 
   const text = extractResponseText(response);
-  const grounded = extractFromGrounding(candidate.groundingMetadata);
   const parsed = parseArticlesFromText(text);
+  const grounded = extractFromGrounding(candidate.groundingMetadata);
 
-  const rawArticles = dedupeArticles(
-    grounded.length > 0 ? [...grounded, ...parsed] : parsed
-  );
+  // JSON 응답(Gemini가 검색 결과에서 복사한 URL)을 grounding 메타데이터보다 우선
+  const merged = dedupeArticles([...parsed, ...grounded]);
+  const rawArticles = await filterValidArticles(merged);
 
   if (rawArticles.length === 0) {
-    throw new Error("수집된 뉴스가 없습니다. 다른 키워드로 시도해 주세요.");
+    throw new Error("유효한 뉴스 URL을 찾지 못했습니다. 다른 키워드로 시도해 주세요.");
   }
 
   let imageMap = new Map<string, string | null>();
