@@ -20,6 +20,9 @@ npm run dev
 
 http://localhost:3000 에서 확인
 
+로컬에서 `index.html` 단독 테스트: `npm run dev` 실행 후 http://localhost:3000/index.html 접속
+(API 키는 서버 `.env.local`의 `GEMINI_API_KEY` 사용)
+
 ## Vercel 배포
 
 1. GitHub 저장소 연결

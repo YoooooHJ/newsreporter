@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI News Reporter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --starbucks-green: #006241;
+      --green-accent: #00754a;
+      --house-green: #1e3932;
+      --neutral-warm: #f2f0eb;
+      --ceramic: #edebe9;
+      --text-black: rgba(0, 0, 0, 0.87);
+      --text-black-soft: rgba(0, 0, 0, 0.58);
+      --text-white-soft: rgba(255, 255, 255, 0.7);
+      --card-shadow: 0 0 0.5px rgba(0, 0, 0, 0.14), 0 1px 1px rgba(0, 0, 0, 0.24);
+      --red: #c82014;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 62.5%; }
+
+    body {
+      font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
+      line-height: 1.5;
+      color: var(--text-black);
+      background: var(--neutral-warm);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero {
+      background: var(--house-green);
+      padding: 4rem 1.6rem;
+      text-align: center;
+    }
+    @media (min-width: 768px) { .hero { padding: 6.4rem 4rem; } }
+
+    .hero-label {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--text-white-soft);
+      margin-bottom: 0.8rem;
+    }
+    .hero-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.16px;
+      line-height: 1.2;
+      margin-bottom: 1.6rem;
+    }
+    @media (min-width: 768px) { .hero-title { font-size: 3.6rem; } }
+    .hero-desc {
+      font-size: 1.6rem;
+      color: var(--text-white-soft);
+      line-height: 1.75;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    @media (min-width: 768px) { .hero-desc { font-size: 1.9rem; } }
+
+    .container { max-width: 720px; margin: 0 auto; width: 100%; }
+    .section { padding: 3.2rem 1.6rem; }
+    @media (min-width: 768px) { .section { padding: 3.2rem 4rem; } }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 2.4rem;
+    }
+    @media (min-width: 768px) { .card { padding: 3.2rem; } }
+
+    .field-label {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+    .field-input {
+      width: 100%;
+      padding: 1.2rem;
+      border: 1px solid #d6dbde;
+      border-radius: 4px;
+      font-size: 1.6rem;
+      font-family: inherit;
+      margin-bottom: 1.6rem;
+    }
+    .field-input:focus {
+      outline: none;
+      border-color: var(--green-accent);
+    }
+    .field-input:disabled { opacity: 0.5; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 1.4rem 1.6rem;
+      background: var(--green-accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.6rem;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.95; }
+    .btn-primary:active { transform: scale(0.95); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-outline {
+      padding: 0.7rem 1.6rem;
+      background: transparent;
+      color: var(--green-accent);
+      border: 1px solid var(--green-accent);
+      border-radius: 50px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover {
+      background: var(--green-accent);
+      color: #fff;
+    }
+    .btn-outline:active { transform: scale(0.95); }
+    .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-load-more {
+      padding: 1.2rem 2.4rem;
+      background: #fff;
+      color: var(--green-accent);
+      border: 1px solid var(--green-accent);
+      border-radius: 50px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-load-more:hover {
+      background: var(--green-accent);
+      color: #fff;
+    }
+    .btn-load-more:active { transform: scale(0.95); }
+
+    .loading-box {
+      margin-top: 2.4rem;
+      padding: 2rem;
+      background: var(--ceramic);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .spinner {
+      width: 3.2rem;
+      height: 3.2rem;
+      border: 3px solid var(--green-accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.6rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--starbucks-green);
+      margin-bottom: 0.8rem;
+    }
+    .loading-sub {
+      font-size: 1.4rem;
+      color: var(--text-black-soft);
+    }
+
+    .error-box {
+      margin-top: 2.4rem;
+      padding: 1.6rem 2rem;
+      background: rgba(200, 32, 20, 0.05);
+      border: 1px solid rgba(200, 32, 20, 0.2);
+      border-radius: 12px;
+      color: var(--red);
+      font-size: 1.4rem;
+    }
+
+    .keywords-label {
+      font-size: 1.3rem;
+      color: var(--text-black-soft);
+      margin-bottom: 1.2rem;
+    }
+    .keywords { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+
+    .results-section { padding: 0 1.6rem 4rem; }
+    @media (min-width: 768px) { .results-section { padding: 0 4rem 6.4rem; } }
+
+    .results-title {
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--starbucks-green);
+      letter-spacing: -0.16px;
+      margin-bottom: 2.4rem;
+    }
+
+    .news-list { display: flex; flex-direction: column; gap: 1.6rem; }
+
+    .news-card {
+      display: block;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s;
+    }
+    .news-card:active { transform: scale(0.98); }
+
+    .news-card-image {
+      aspect-ratio: 16 / 9;
+      background: var(--ceramic);
+      overflow: hidden;
+    }
+    .news-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .news-card-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      opacity: 0.3;
+    }
+
+    .news-card-body { padding: 1.6rem; }
+    .news-card-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 0.8rem;
+      transition: color 0.2s;
+    }
+    .news-card:hover .news-card-title { color: var(--green-accent); }
+    .news-card-url {
+      font-size: 1.3rem;
+      color: var(--text-black-soft);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .load-more-wrap { text-align: center; margin-top: 2.4rem; }
+
+    footer {
+      margin-top: auto;
+      background: var(--house-green);
+      padding: 2.4rem 1.6rem;
+      text-align: center;
+    }
+    footer p {
+      font-size: 1.3rem;
+      color: var(--text-white-soft);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <p class="hero-label">AI News Reporter</p>
+      <h1 class="hero-title">📰 AI News Reporter</h1>
+      <p class="hero-desc">
+        키워드를 입력하면 최근 7일 이내 주요 이슈를 자동으로 수집하여 보고서를 생성합니다.
+      </p>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <div class="card">
+        <form id="searchForm">
+          <label class="field-label" for="keyword">키워드</label>
+          <input
+            class="field-input"
+            type="text"
+            id="keyword"
+            placeholder="예: OpenAI, AI 반도체"
+            maxlength="100"
+          />
+          <button class="btn-primary" type="submit" id="submitBtn">보고서 생성</button>
+        </form>
+
+        <div id="loadingBox" class="loading-box hidden" role="status" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="loading-title">최신 이슈를 수집하고 보고서를 작성하고 있습니다.</p>
+          <p class="loading-sub">Gemini가 웹을 검색하는 중입니다. 보통 15~40초 정도 걸립니다.</p>
+        </div>
+
+        <div id="errorBox" class="error-box hidden" role="alert"></div>
+
+        <div style="margin-top: 2.4rem;">
+          <p class="keywords-label">추천 키워드</p>
+          <div class="keywords" id="keywordChips"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="results-section hidden" id="resultsSection">
+    <div class="container">
+      <h2 class="results-title" id="resultsTitle"></h2>
+      <div class="news-list" id="newsList"></div>
+      <div class="load-more-wrap hidden" id="loadMoreWrap">
+        <button class="btn-load-more" id="loadMoreBtn">더보기</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Powered by Gemini (Google Search Grounding) · Next.js</p>
+  </footer>
+
+  <script>
+    const RECOMMENDED_KEYWORDS = [
+      "OpenAI", "Gemini", "AI 반도체", "생성형 AI",
+      "스타트업 투자", "공공데이터", "신약개발",
+    ];
+    const PAGE_SIZE = 3;
+
+    let allArticles = [];
+    let visibleCount = PAGE_SIZE;
+    let isLoading = false;
+
+    const keywordInput = document.getElementById("keyword");
+    const searchForm = document.getElementById("searchForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const loadingBox = document.getElementById("loadingBox");
+    const errorBox = document.getElementById("errorBox");
+    const resultsSection = document.getElementById("resultsSection");
+    const resultsTitle = document.getElementById("resultsTitle");
+    const newsList = document.getElementById("newsList");
+    const loadMoreWrap = document.getElementById("loadMoreWrap");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    const keywordChips = document.getElementById("keywordChips");
+
+    RECOMMENDED_KEYWORDS.forEach((kw) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-outline";
+      btn.textContent = kw;
+      btn.addEventListener("click", () => {
+        keywordInput.value = kw;
+        searchNews(kw);
+      });
+      keywordChips.appendChild(btn);
+    });
+
+    function setLoading(on) {
+      isLoading = on;
+      loadingBox.classList.toggle("hidden", !on);
+      submitBtn.disabled = on || !keywordInput.value.trim();
+      submitBtn.textContent = on ? "수집 중..." : "보고서 생성";
+      keywordInput.disabled = on;
+      document.querySelectorAll(".btn-outline").forEach((b) => { b.disabled = on; });
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove("hidden");
+    }
+
+    function hideError() {
+      errorBox.classList.add("hidden");
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement("div");
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function renderNewsCard(item) {
+      const a = document.createElement("a");
+      a.className = "news-card";
+      a.href = item.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+
+      const imageWrap = document.createElement("div");
+      imageWrap.className = "news-card-image";
+
+      if (item.imageUrl) {
+        const img = document.createElement("img");
+        img.src = item.imageUrl;
+        img.alt = item.title;
+        img.loading = "lazy";
+        img.onerror = () => {
+          imageWrap.innerHTML = '<div class="news-card-placeholder">📰</div>';
+        };
+        imageWrap.appendChild(img);
+      } else {
+        imageWrap.innerHTML = '<div class="news-card-placeholder">📰</div>';
+      }
+
+      const body = document.createElement("div");
+      body.className = "news-card-body";
+      body.innerHTML = `
+        <h3 class="news-card-title">${escapeHtml(item.title)}</h3>
+        <p class="news-card-url">${escapeHtml(item.url)}</p>
+      `;
+
+      a.appendChild(imageWrap);
+      a.appendChild(body);
+      return a;
+    }
+
+    function renderResults() {
+      newsList.innerHTML = "";
+      allArticles.slice(0, visibleCount).forEach((item) => {
+        newsList.appendChild(renderNewsCard(item));
+      });
+
+      const remaining = allArticles.length - visibleCount;
+      if (remaining > 0) {
+        loadMoreWrap.classList.remove("hidden");
+        loadMoreBtn.textContent = `더보기 (${remaining}건 남음)`;
+      } else {
+        loadMoreWrap.classList.add("hidden");
+      }
+    }
+
+    async function searchNews(keyword) {
+      const trimmed = (keyword || keywordInput.value).trim();
+      if (!trimmed || isLoading) return;
+
+      setLoading(true);
+      hideError();
+      resultsSection.classList.add("hidden");
+      allArticles = [];
+      visibleCount = PAGE_SIZE;
+
+      try {
+        const res = await fetch("/api/report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keyword: trimmed }),
+        });
+
+        const data = await res.json();
+
+        if (data.success && Array.isArray(data.articles)) {
+          allArticles = data.articles;
+          resultsTitle.textContent = `'${trimmed}' 최신 이슈`;
+          resultsSection.classList.remove("hidden");
+          renderResults();
+        } else {
+          showError(data.message || "뉴스를 불러오지 못했습니다.");
+        }
+      } catch {
+        showError("네트워크 오류가 발생했습니다. 서버가 실행 중인지 확인해 주세요.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      searchNews();
+    });
+
+    keywordInput.addEventListener("input", () => {
+      submitBtn.disabled = isLoading || !keywordInput.value.trim();
+    });
+
+    loadMoreBtn.addEventListener("click", () => {
+      visibleCount += PAGE_SIZE;
+      renderResults();
+    });
+  </script>
+</body>
+</html>
