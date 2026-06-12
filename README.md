@@ -1,6 +1,6 @@
 # AI News Reporter
 
-키워드를 입력하면 Gemini + Google Search Grounding으로 최근 7일 이내 주요 뉴스를 수집해 보여주는 서비스입니다.
+키워드를 입력하면 Gemini (`gemini-2.5-flash-lite`) + Google Search Grounding으로 최근 7일 이내 주요 뉴스를 수집해 보여주는 서비스입니다.
 
 ## 기능
 
@@ -35,4 +35,4 @@ API 키는 **서버 환경변수**로만 사용됩니다. 프론트엔드에 노
 
 | 변수 | 설명 |
 |------|------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) API 키 |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) API 키 (Vercel Environment Variables에 등록) |
