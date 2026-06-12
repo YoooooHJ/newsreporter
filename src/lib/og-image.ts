@@ -53,7 +53,7 @@ export async function fetchOgImage(pageUrl: string): Promise<string | null> {
 
     if (!response.ok) return null;
 
-    const html = await response.text().slice(0, 100_000);
+    const html = (await response.text()).slice(0, 100_000);
     const ogImage =
       extractMetaContent(html, "og:image") ||
       extractMetaContent(html, "twitter:image");
