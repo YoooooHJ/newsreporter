@@ -1,4 +1,5 @@
 import { GoogleGenAI, type GroundingMetadata } from "@google/genai";
+import { getGeminiApiKey } from "./env";
 import { fetchOgImages } from "./og-image";
 import { buildNewsSearchPrompt } from "./report-prompt";
 
@@ -116,10 +117,7 @@ function dedupeArticles(articles: RawArticle[]): ValidArticle[] {
 }
 
 export async function searchNews(keyword: string): Promise<NewsItem[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
+  const apiKey = getGeminiApiKey();
 
   const ai = new GoogleGenAI({ apiKey });
 

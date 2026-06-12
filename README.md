@@ -23,13 +23,32 @@ http://localhost:3000 에서 확인
 로컬에서 `index.html` 단독 테스트: `npm run dev` 실행 후 http://localhost:3000/index.html 접속
 (API 키는 서버 `.env.local`의 `GEMINI_API_KEY` 사용)
 
-## Vercel 배포
+## Vercel 환경변수 설정 (필수)
 
-1. GitHub 저장소 연결
-2. Environment Variables에 `GEMINI_API_KEY` 등록
-3. Deploy
+1. [Vercel Dashboard](https://vercel.com) → **newsreporter** 프로젝트 선택
+2. **Settings** → **Environment Variables**
+3. 아래처럼 추가:
 
-API 키는 **서버 환경변수**로만 사용됩니다. 프론트엔드에 노출되지 않습니다.
+| Key | Value | Environment |
+|-----|-------|-------------|
+| `GEMINI_API_KEY` | Google AI Studio API 키 | **Production** (Preview도 권장) |
+
+4. **Save** 후 **Deployments** → 최신 배포 → **⋯** → **Redeploy** (환경변수 추가 후 반드시 재배포)
+
+### API 키 등록 확인
+
+배포 URL에서 아래 주소를 열어 `geminiKeyConfigured: true` 인지 확인:
+
+```
+https://your-app.vercel.app/api/health
+```
+
+`false`이면 환경변수 이름·Production 체크·Redeploy를 다시 확인하세요.
+
+**주의**
+- 변수 이름은 정확히 `GEMINI_API_KEY` (띄어쓰기·따옴표 없음)
+- 값 앞뒤 공백 없이 붙여넣기
+- `NEXT_PUBLIC_` 접두사 사용 금지 (키가 브라우저에 노출됨)
 
 ## 환경 변수
 
