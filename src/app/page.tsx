@@ -34,10 +34,10 @@ function NewsCard({ item }: { item: NewsItem }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-[12px] bg-white transition-transform duration-200 active:scale-[0.98]"
+      className="group flex gap-[1.2rem] overflow-hidden rounded-[12px] bg-white p-[1.2rem] transition-transform duration-200 active:scale-[0.98] md:gap-[1.6rem] md:p-[1.6rem]"
       style={{ boxShadow: "var(--card-shadow)" }}
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-[var(--ceramic)]">
+      <div className="h-[7.2rem] w-[9.6rem] shrink-0 overflow-hidden rounded-[8px] bg-[var(--ceramic)] md:h-[8rem] md:w-[11.2rem]">
         {item.imageUrl && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -49,19 +49,19 @@ function NewsCard({ item }: { item: NewsItem }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[var(--ceramic)]">
-            <span className="text-[3.2rem] opacity-30">📰</span>
+            <span className="text-[2rem] opacity-30 md:text-[2.4rem]">📰</span>
           </div>
         )}
       </div>
-      <div className="p-[1.6rem]">
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
         <h3
-          className="mb-[0.8rem] text-[1.6rem] font-semibold leading-[1.4] text-[var(--text-black)] group-hover:text-[var(--green-accent)]"
+          className="mb-[0.6rem] line-clamp-2 text-[1.5rem] font-semibold leading-[1.4] text-[var(--text-black)] group-hover:text-[var(--green-accent)] md:text-[1.6rem]"
           style={{ letterSpacing: "-0.01em" }}
         >
           {item.title}
         </h3>
         <p
-          className="truncate text-[1.3rem] text-[var(--text-black-soft)]"
+          className="truncate text-[1.2rem] text-[var(--text-black-soft)] md:text-[1.3rem]"
           style={{ letterSpacing: "-0.01em" }}
         >
           {item.url}
