@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, type GroundingMetadata } from "@google/genai";
 import { fetchOgImages } from "./og-image";
 import { buildNewsSearchPrompt } from "./report-prompt";
 
@@ -18,31 +18,71 @@ type ValidArticle = {
   url: string;
 };
 
-function extractFromGrounding(
-  groundingMetadata: Record<string, unknown> | undefined
-): RawArticle[] {
-  if (!groundingMetadata) return [];
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
-  const chunks = groundingMetadata.groundingChunks as
-    | Array<{ web?: { uri?: string; title?: string } }>
-    | undefined;
+function extractResponseText(
+  response: Awaited<
+    ReturnType<InstanceType<typeof GoogleGenAI>["models"]["generateContent"]>
+  >
+): string {
+  if (response.text) return response.text;
 
-  if (!chunks) return [];
+  const parts = response.candidates?.[0]?.content?.parts;
+  if (!parts) return "";
 
-  return chunks
-    .filter((chunk) => chunk.web?.uri)
-    .map((chunk) => ({
-      title: chunk.web?.title || chunk.web?.uri || "",
-      url: chunk.web?.uri || "",
-    }));
+  return parts
+    .map((part) => ("text" in part && part.text ? part.text : ""))
+    .join("");
+}
+
+function titleFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "뉴스 기사";
+  }
+}
+
+function extractFromGrounding(metadata: GroundingMetadata | undefined): RawArticle[] {
+  if (!metadata?.groundingChunks) return [];
+
+  const articles: RawArticle[] = [];
+
+  for (const chunk of metadata.groundingChunks) {
+    if (chunk.web?.uri) {
+      articles.push({
+        title: chunk.web.title?.trim() || titleFromUrl(chunk.web.uri),
+        url: chunk.web.uri,
+      });
+      continue;
+    }
+
+    if (chunk.retrievedContext?.uri) {
+      articles.push({
+        title:
+          chunk.retrievedContext.title?.trim() ||
+          titleFromUrl(chunk.retrievedContext.uri),
+        url: chunk.retrievedContext.uri,
+      });
+    }
+  }
+
+  return articles;
 }
 
 function parseArticlesFromText(text: string): RawArticle[] {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return [];
+  if (!text.trim()) return [];
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const jsonCandidate = fenced?.[1]?.trim() ?? text.match(/\{[\s\S]*\}/)?.[0];
+
+  if (!jsonCandidate) return [];
 
   try {
-    const parsed = JSON.parse(jsonMatch[0]) as { articles?: RawArticle[] };
+    const parsed = JSON.parse(jsonCandidate) as { articles?: RawArticle[] };
     return parsed.articles ?? [];
   } catch {
     return [];
@@ -54,12 +94,22 @@ function dedupeArticles(articles: RawArticle[]): ValidArticle[] {
   const result: ValidArticle[] = [];
 
   for (const article of articles) {
-    const title = article.title?.trim();
     const url = article.url?.trim();
-    if (!title || !url || !url.startsWith("http")) continue;
-    if (seen.has(url)) continue;
-    seen.add(url);
-    result.push({ title, url });
+    if (!url) continue;
+
+    let normalizedUrl = url;
+    try {
+      normalizedUrl = new URL(url).href;
+    } catch {
+      continue;
+    }
+
+    if (!normalizedUrl.startsWith("http")) continue;
+    if (seen.has(normalizedUrl)) continue;
+    seen.add(normalizedUrl);
+
+    const title = article.title?.trim() || titleFromUrl(normalizedUrl);
+    result.push({ title, url: normalizedUrl });
   }
 
   return result;
@@ -73,33 +123,47 @@ export async function searchNews(keyword: string): Promise<NewsItem[]> {
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: buildNewsSearchPrompt(keyword),
-    config: {
-      tools: [{ googleSearch: {} }],
-    },
-  });
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: buildNewsSearchPrompt(keyword),
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
+  } catch (error) {
+    throw new Error(`Gemini API 호출 실패: ${getErrorMessage(error)}`);
+  }
 
-  const text = response.text ?? "";
   const candidate = response.candidates?.[0];
-  const groundingMetadata = candidate?.groundingMetadata as
-    | Record<string, unknown>
-    | undefined;
+  if (!candidate) {
+    throw new Error("Gemini가 응답을 반환하지 않았습니다.");
+  }
 
+  if (candidate.finishReason && candidate.finishReason !== "STOP") {
+    throw new Error(`Gemini 응답 중단: ${candidate.finishReason}`);
+  }
+
+  const text = extractResponseText(response);
+  const grounded = extractFromGrounding(candidate.groundingMetadata);
   const parsed = parseArticlesFromText(text);
-  const grounded = extractFromGrounding(groundingMetadata);
 
-  let rawArticles = dedupeArticles(
-    parsed.length > 0 ? [...parsed, ...grounded] : grounded
+  const rawArticles = dedupeArticles(
+    grounded.length > 0 ? [...grounded, ...parsed] : parsed
   );
 
   if (rawArticles.length === 0) {
-    throw new Error("No news articles found");
+    throw new Error("수집된 뉴스가 없습니다. 다른 키워드로 시도해 주세요.");
   }
 
-  const urls = rawArticles.map((a) => a.url);
-  const imageMap = await fetchOgImages(urls);
+  let imageMap = new Map<string, string | null>();
+  try {
+    const urlsForImages = rawArticles.slice(0, 9).map((a) => a.url);
+    imageMap = await fetchOgImages(urlsForImages);
+  } catch (error) {
+    console.warn("OG image fetch failed:", getErrorMessage(error));
+  }
 
   return rawArticles.map((article) => ({
     title: article.title,

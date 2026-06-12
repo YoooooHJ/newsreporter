@@ -37,7 +37,7 @@ function resolveUrl(base: string, relative: string): string {
 export async function fetchOgImage(pageUrl: string): Promise<string | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     const response = await fetch(pageUrl, {
       signal: controller.signal,
